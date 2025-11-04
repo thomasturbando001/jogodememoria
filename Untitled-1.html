@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jogo da Memória Educativo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .info {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .tabuleiro {
+      display: grid;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .carta {
+      width: 100px;
+      height: 100px;
+      background: #3498db;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .carta img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .carta.virada img {
+      display: block;
+    }
+
+    .carta.virada {
+      transform: rotateY(180deg);
+    }
+
+    .carta.acertou {
+      border: 3px solid #2ecc71;
+      cursor: default;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      border: none;
+      background-color: #2c3e50;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #1abc9c;
+    }
+
+    .vitoria, .tela-inicial {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      text-align: center;
+      z-index: 2;
+      padding: 20px;
+    }
+
+    select {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Tela inicial -->
+  <div class="tela-inicial" id="telaInicial">
+    <h1>🎓 Jogo da Memória Educativo</h1>
+    <p>Escolha um tema para aprender brincando!</p>
+
+    <label for="tema">Tema:</label>
+    <select id="tema">
+      <option value="transito">🚦 Trânsito</option>
+      <option value="comida">🥦 Alimentação Saudável</option>
+      <option value="reciclagem">♻️ Reciclagem</option>
+    </select>
+
+    <button onclick="iniciar()">▶️ Iniciar</button>
+  </div>
+
+  <!-- Interface do jogo -->
+  <div id="interfaceJogo" style="display: none; flex-direction: column; align-items: center;">
+    <h1 id="tituloFase">🧠 Fase 1</h1>
+    <div class="info">
+      <div>⏱️ Tempo: <span id="tempo">0</span>s</div>
+      <div>🎯 Jogadas: <span id="jogadas">0</span></div>
+    </div>
+    <div class="tabuleiro" id="tabuleiro"></div>
+    <button onclick="reiniciarJogo()">🔁 Reiniciar Fase</button>
+  </div>
+
+  <div class="vitoria" id="vitoria" style="display: none;">
+    <p id="mensagemVitoria"></p>
+    <button onclick="proximaFase()">➡️ Próxima Fase</button>
+  </div>
+
+  <script>
+    const temas = {
+      transito: [
+        "https://cdn-icons-png.flaticon.com/512/1026/1026330.png", // semáforo
+        "https://cdn-icons-png.flaticon.com/512/1026/1026475.png", // faixa
+        "https://cdn-icons-png.flaticon.com/512/1026/1026404.png", // bicicleta
+        "https://cdn-icons-png.flaticon.com/512/1026/1026461.png", // carro
+        "https://cdn-icons-png.flaticon.com/512/1026/1026423.png", // placa pare
+        "https://cdn-icons-png.flaticon.com/512/1026/1026383.png"  // ônibus
+      ],
+      comida: [
+        "https://cdn-icons-png.flaticon.com/512/1046/1046784.png", // maçã
+        "https://cdn-icons-png.flaticon.com/512/1046/1046751.png", // brócolis
+        "https://cdn-icons-png.flaticon.com/512/1046/1046786.png", // banana
+        "https://cdn-icons-png.flaticon.com/512/1046/1046769.png", // cenoura
+        "https://cdn-icons-png.flaticon.com/512/1046/1046788.png", // tomate
+        "https://cdn-icons-png.flaticon.com/512/1046/1046777.png"  // pão integral
+      ],
+      reciclagem: [
+        "https://cdn-icons-png.flaticon.com/512/616/616408.png", // lixeira
+        "https://cdn-icons-png.flaticon.com/512/616/616554.png", // garrafa
+        "https://cdn-icons-png.flaticon.com/512/616/616513.png", // papel
+        "https://cdn-icons-png.flaticon.com/512/616/616499.png", // vidro
+        "https://cdn-icons-png.flaticon.com/512/616/616521.png", // plástico
+        "https://cdn-icons-png.flaticon.com/512/616/616440.png"  // reciclar símbolo
+      ]
+    };
+
+    let nivel = 1;
+    let temaEscolhido = "transito";
+    let tempo = 0, jogadas = 0, pares = 0, timer;
+    let cartaVirada = null, bloqueio = false;
+
+    function iniciar() {
+      temaEscolhido = document.getElementById("tema").value;
+      document.getElementById("telaInicial").style.display = "none";
+      document.getElementById("interfaceJogo").style.display = "flex";
+      iniciarFase();
+    }
+
+    function iniciarFase() {
+      const tabuleiro = document.getElementById("tabuleiro");
+      tabuleiro.innerHTML = "";
+      tempo = 0;
+      jogadas = 0;
+      pares = 0;
+      cartaVirada = null;
+      bloqueio = false;
+      document.getElementById("tempo").textContent = tempo;
+      document.getElementById("jogadas").textContent = jogadas;
+      document.getElementById("tituloFase").textContent = `🧩 Fase ${nivel}`;
+
+      clearInterval(timer);
+      timer = setInterval(() => {
+        tempo++;
+        document.getElementById("tempo").textContent = tempo;
+      }, 1000);
+
+      let imagens = temas[temaEscolhido].slice(0, nivel + 2);
+      let cartas = [...imagens, ...imagens].sort(() => Math.random() - 0.5);
+      let colunas = nivel === 1 ? 3 : nivel === 2 ? 4 : 5;
+      tabuleiro.style.gridTemplateColumns = `repeat(${colunas}, 100px)`;
+
+      cartas.forEach((src) => {
+        const carta = document.createElement("div");
+        carta.classList.add("carta");
+        const img = document.createElement("img");
+        img.src = src;
+        carta.appendChild(img);
+        carta.addEventListener("click", () => virarCarta(carta, src));
+        tabuleiro.appendChild(carta);
+      });
+    }
+
+    function virarCarta(carta, valor) {
+      if (bloqueio || carta.classList.contains("virada") || carta.classList.contains("acertou")) return;
+
+      carta.classList.add("virada");
+      if (!cartaVirada) {
+        cartaVirada = { carta, valor };
+      } else {
+        jogadas++;
+        document.getElementById("jogadas").textContent = jogadas;
+
+        if (cartaVirada.valor === valor) {
+          carta.classList.add("acertou");
+          cartaVirada.carta.classList.add("acertou");
+          cartaVirada = null;
+          pares++;
+
+          if (pares === (nivel + 2)) {
+            clearInterval(timer);
+            setTimeout(() => mostrarVitoria(), 800);
+          }
+        } else {
+          bloqueio = true;
+          setTimeout(() => {
+            carta.classList.remove("virada");
+            cartaVirada.carta.classList.remove("virada");
+            cartaVirada = null;
+            bloqueio = false;
+          }, 1000);
+        }
+      }
+    }
+
+    function mostrarVitoria() {
+      const vitoria = document.getElementById("vitoria");
+      vitoria.style.display = "flex";
+      document.getElementById("mensagemVitoria").textContent =
+        nivel < 3
+          ? `🎉 Parabéns! Você completou a Fase ${nivel}!`
+          : `🏁 Incrível! Você completou todas as fases do tema "${temaEscolhido.toUpperCase()}"!`;
+    }
+
+    function proximaFase() {
+      const vitoria = document.getElementById("vitoria");
+      vitoria.style.display = "none";
+      if (nivel < 3) {
+        nivel++;
+        iniciarFase();
+      } else {
+        nivel = 1;
+        document.getElementById("interfaceJogo").style.display = "none";
+        document.getElementById("telaInicial").style.display = "flex";
+      }
+    }
+
+    function reiniciarJogo() {
+      clearInterval(timer);
+      iniciarFase();
+    }
+  </script>
+</body>
+</html>
